@@ -165,6 +165,8 @@ a{color:var(--accent-strong);}
 .card-name{font-family:"Archivo",sans-serif;font-weight:700;font-size:15.5px;line-height:1.25;}
 .card-contact{font-size:12.5px;color:var(--text-muted);margin-top:2px;}
 .card-badges{display:flex;flex-wrap:wrap;gap:6px;}
+.icon-copy-btn{background:none;border:1px solid var(--border);border-radius:999px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:13px;flex:none;padding:0;}
+.icon-copy-btn:hover{border-color:var(--accent);color:var(--accent-strong);background:var(--accent-soft);}
 .badge.approved{background:var(--accent);color:#fff;border-color:var(--accent);}
 .badge.preferred{background:transparent;color:var(--accent-strong);border-color:var(--accent-strong);border-width:1.5px;}
 .badge{
@@ -210,6 +212,14 @@ a{color:var(--accent-strong);}
 .modal-actions{display:flex;gap:8px;padding-top:4px;flex-wrap:wrap;}
 
 .footer-note{margin-top:44px;padding-top:18px;border-top:1px solid var(--border);color:var(--text-faint);font-size:12px;text-align:center;}
+
+/* ---------- Toast ---------- */
+#toastHost{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{
+  background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:600;
+  box-shadow:var(--shadow);animation:rise .18s ease-out;
+}
+@keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .footer-note a{color:var(--text-muted);}
 </style>
 
@@ -281,6 +291,8 @@ a{color:var(--accent-strong);}
   </div>
 </div>
 
+<div id="toastHost"></div>
+
 <!-- Detail modal -->
 <div class="overlay" id="detailOverlay" hidden>
   <div class="modal" role="dialog" aria-modal="true">
@@ -296,6 +308,7 @@ a{color:var(--accent-strong);}
         <div class="detail-notes" id="detailNotes"></div>
       </div>
       <div class="modal-actions">
+        <button class="btn btn-ghost" id="detailCopyBtn">📋 Copy name &amp; phone</button>
         <button class="btn btn-ghost" data-close="detail">Close</button>
       </div>
     </div>
@@ -306,9 +319,9 @@ a{color:var(--accent-strong);}
 (function(){
   "use strict";
 
-  var TRADES = [{"key": "electrician", "label": "Electrician"}, {"key": "auto-electrician", "label": "Auto Electrician"}, {"key": "hygienist", "label": "Hygienist"}, {"key": "carpet-cleaner", "label": "Carpet Cleaning"}, {"key": "dry-cleaning", "label": "Dry Cleaning"}, {"key": "equipment-hire", "label": "Equipment Hire"}, {"key": "appliance-repair", "label": "Appliance Repair"}, {"key": "asbestos-removal", "label": "Asbestos Removal"}, {"key": "art-restoration", "label": "Art Restoration"}, {"key": "art-storage", "label": "Art Storage & Hanging"}, {"key": "landscaping", "label": "Landscaping & Gardening"}, {"key": "storage-pod", "label": "Storage \u2013 POD Hire"}, {"key": "self-storage", "label": "Storage \u2013 Self Storage"}, {"key": "mechanic", "label": "Mechanic"}, {"key": "furniture-restorer", "label": "Furniture Restorer"}];
+  var TRADES = [{"key": "electrician", "label": "Electrician"}, {"key": "auto-electrician", "label": "Auto Electrician"}, {"key": "hygienist", "label": "Hygienist"}, {"key": "carpet-cleaner", "label": "Carpet Cleaning"}, {"key": "dry-cleaning", "label": "Dry Cleaning"}, {"key": "equipment-hire", "label": "Equipment Hire"}, {"key": "appliance-repair", "label": "Appliance Repair"}, {"key": "asbestos-removal", "label": "Asbestos Removal"}, {"key": "art-restoration", "label": "Art Restoration"}, {"key": "art-storage", "label": "Art Storage & Hanging"}, {"key": "landscaping", "label": "Landscaping & Gardening"}, {"key": "storage-pod", "label": "Storage \u2013 POD Hire"}, {"key": "self-storage", "label": "Storage \u2013 Self Storage"}, {"key": "mechanic", "label": "Mechanic"}, {"key": "furniture-restorer", "label": "Furniture Restorer"}, {"key": "plumber", "label": "Plumber"}];
   var REGIONS = [{"key": "brisbane", "label": "Brisbane"}, {"key": "gold-coast", "label": "Gold Coast"}, {"key": "sunshine-coast", "label": "Sunshine Coast"}, {"key": "toowoomba", "label": "Toowoomba & Darling Downs"}, {"key": "logan", "label": "Logan"}, {"key": "ipswich", "label": "Ipswich"}, {"key": "wide-bay", "label": "Wide Bay & Fraser Coast"}, {"key": "northern-nsw", "label": "Northern NSW"}, {"key": "statewide", "label": "Brisbane-wide / Will Travel"}, {"key": "noosa", "label": "Noosa"}];
-  var SUBS = [{"id": "all-sorts-auto-electrical", "approved": true, "preferred": false, "contactName": "", "email": "", "name": "All Sorts Auto Electrical", "notes": "Good auto electrician, trusted. North Brisbane, will travel a little.", "phone": "0432 411 550", "region": "brisbane", "trade": "auto-electrician", "website": ""}, {"id": "asbestology", "approved": true, "preferred": false, "contactName": "Cole", "email": "", "name": "Asbestology", "notes": "Good trade, by the book. Expensive.", "phone": "1800 518 147", "region": "brisbane", "trade": "asbestos-removal", "website": "https://www.asbestology.com.au/"}, {"id": "aus-pods", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "AUS PODS", "notes": "", "phone": "1800 467 637", "region": "statewide", "trade": "storage-pod", "website": "https://www.auspods.com.au/"}, {"id": "bueno-garage", "approved": true, "preferred": true, "contactName": "", "email": "", "name": "Bueno Garage", "notes": "Ranger service. Based in Everton Hills.", "phone": "(07) 4738 5282", "region": "brisbane", "trade": "mechanic", "website": ""}, {"id": "climate-rental-solutions", "approved": true, "preferred": false, "contactName": "", "email": "", "name": "Climate Rental Solutions", "notes": "Drying equipment/AFD. Warehouse in Berrinba.", "phone": "1300 447 247", "region": "logan", "trade": "equipment-hire", "website": ""}, {"id": "coolbreeze-rentals", "approved": true, "preferred": false, "contactName": "Stuart Dann", "email": "", "name": "Coolbreeze Rentals", "notes": "Drying equipment/AFD. Warehouse in Meadowbrook.", "phone": "1300 885 188", "region": "logan", "trade": "equipment-hire", "website": ""}, {"id": "dark-electrical-dlf3", "approved": true, "preferred": false, "contactName": "Daniel", "email": "", "name": "Dark Electrical", "notes": "Approved contractor", "phone": "0468 497 449", "region": "gold-coast", "trade": "electrician", "website": ""}, {"id": "dewar-group", "approved": false, "preferred": false, "contactName": "Dean", "email": "", "name": "Dewar Group", "notes": "Also does restoration work.", "phone": "0431 751 445", "region": "toowoomba", "trade": "asbestos-removal", "website": ""}, {"id": "euro-motive", "approved": false, "preferred": false, "contactName": "Matt", "email": "", "name": "Euro Motive", "notes": "Specialist Euro mechanic for Renault. Mobile \u2014 will come to North Brisbane; travels further at extra cost.", "phone": "0473 733 442", "region": "brisbane", "trade": "mechanic", "website": ""}, {"id": "express-carpet-repairs", "approved": true, "preferred": false, "contactName": "Elijah Chique", "email": "", "name": "Express Carpet Repairs", "notes": "Will travel for extra rates.", "phone": "0490 807 894", "region": "brisbane", "trade": "carpet-cleaner", "website": ""}, {"id": "exterior-solutions", "approved": true, "preferred": false, "contactName": "Richard", "email": "", "name": "Exterior Solutions", "notes": "Good to deal with, reliable.", "phone": "0408 700 994", "region": "toowoomba", "trade": "landscaping", "website": ""}, {"id": "jentech-electrical", "approved": true, "preferred": true, "contactName": "Office", "email": "", "name": "Jentech Electrical", "notes": "Preferred trade\nCovers Gold coast and sunshine coast too", "phone": "(07) 3914 9696", "region": "brisbane", "trade": "electrician", "website": ""}, {"id": "jmb-environmental", "approved": true, "preferred": true, "contactName": "Office", "email": "", "name": "JMB Environmental", "notes": "#1 Choice. Also services the Gold Coast.", "phone": "(02) 8339 0312", "region": "brisbane", "trade": "hygienist", "website": ""}, {"id": "kennards-self-storage", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "Kennards Self Storage", "notes": "Generally more expensive than other units. Good to deal with.", "phone": "", "region": "brisbane", "trade": "self-storage", "website": "https://www.kss.com.au/"}, {"id": "klaus-refrigeration", "approved": false, "preferred": false, "contactName": "Klaus", "email": "darlingdownsrefrigeration@gmail.com", "name": "Klaus", "notes": "Fridge and appliance repairs. Slow to provide reports.", "phone": "(07) 4633 4019", "region": "toowoomba", "trade": "appliance-repair", "website": ""}, {"id": "limov-electrical", "approved": false, "preferred": false, "contactName": "Jake Limov", "email": "jake@limovelectrical.com", "name": "Limov Electrical Contracting Pty Ltd", "notes": "North Brisbane (Scarborough).", "phone": "0406 156 912", "region": "brisbane", "trade": "electrician", "website": ""}, {"id": "mammoth-storage", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "Mammoth Storage", "notes": "Used for jobs further north of Brisbane, Sunshine Coast and beyond.", "phone": "(07) 5445 8848", "region": "sunshine-coast", "trade": "self-storage", "website": "https://mammothselfstore.com.au/locations/storage-forest-glen/"}, {"id": "occ-safety", "approved": false, "preferred": false, "contactName": "Malcom", "email": "", "name": "OCC Safety", "notes": "Will travel for extra rates. Bit bodgy.", "phone": "0412 997 314", "region": "brisbane", "trade": "hygienist", "website": ""}, {"id": "pressed-dry-cleaning", "approved": true, "preferred": true, "contactName": "Leigh", "email": "", "name": "Pressed Dry Cleaning", "notes": "Cleans clothes, curtains, linen etc. Can handle larger amounts, and does assessments onsite to work out whether it's worth cleaning vs replacing. Based in Wynnum.", "phone": "0409 395 721", "region": "brisbane", "trade": "dry-cleaning", "website": ""}, {"id": "rsm-conserve", "approved": false, "preferred": false, "contactName": "Liam", "email": "", "name": "RSM Conserve (Art Restorer)", "notes": "Free inspection onsite. Based in Bowen Hills.", "phone": "(07) 3257 7884", "region": "brisbane", "trade": "art-restoration", "website": "https://rsmconserve.com.au/"}, {"id": "storage-choice", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "Storage Choice", "notes": "Have only used the Zillmere branch. Reasonable pricing, good to deal with. Multiple locations available.", "phone": "(07) 3265 6666", "region": "brisbane", "trade": "self-storage", "website": "https://storagechoice.com.au/"}, {"id": "stuart-bywater-design-ikkb", "approved": true, "preferred": false, "contactName": "Stuart", "email": "", "name": "Stuart Bywater Design", "notes": "", "phone": "", "region": "brisbane", "trade": "furniture-restorer", "website": ""}, {"id": "taxi-box", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "Taxi Box", "notes": "", "phone": "(07) 3056 1841", "region": "brisbane", "trade": "storage-pod", "website": "https://www.taxibox.com.au/"}, {"id": "the-art-of-hanging", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "The Art of Hanging", "notes": "", "phone": "(07) 3266 1479", "region": "brisbane", "trade": "art-storage", "website": "http://artofhanging.com/"}, {"id": "the-carpet-cleaners-brisbane", "approved": true, "preferred": true, "contactName": "Dan Swain", "email": "", "name": "The Carpet Cleaners Brisbane", "notes": "Will travel for extra rates.", "phone": "0466 407 727", "region": "brisbane", "trade": "carpet-cleaner", "website": ""}, {"id": "the-carpet-surgeon", "approved": true, "preferred": false, "contactName": "Ben", "email": "", "name": "The Carpet Surgeon", "notes": "", "phone": "0421 222 611", "region": "gold-coast", "trade": "carpet-cleaner", "website": ""}];
+  var SUBS = [{"id": "all-sorts-auto-electrical", "approved": true, "preferred": false, "contactName": "", "email": "", "name": "All Sorts Auto Electrical", "notes": "Good auto electrician, trusted. North Brisbane, will travel a little.", "phone": "0432 411 550", "region": "brisbane", "trade": "auto-electrician", "website": ""}, {"id": "asbestology", "approved": true, "preferred": false, "contactName": "Cole", "email": "", "name": "Asbestology", "notes": "Good trade, by the book. Expensive.", "phone": "1800 518 147", "region": "brisbane", "trade": "asbestos-removal", "website": "https://www.asbestology.com.au/"}, {"id": "aus-pods", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "AUS PODS", "notes": "", "phone": "1800 467 637", "region": "statewide", "trade": "storage-pod", "website": "https://www.auspods.com.au/"}, {"id": "bueno-garage", "approved": true, "preferred": true, "contactName": "", "email": "", "name": "Bueno Garage", "notes": "Ranger service. Based in Everton Hills.", "phone": "(07) 4738 5282", "region": "brisbane", "trade": "mechanic", "website": ""}, {"id": "climate-rental-solutions", "approved": true, "preferred": false, "contactName": "", "email": "", "name": "Climate Rental Solutions", "notes": "Drying equipment/AFD. Warehouse in Berrinba.", "phone": "1300 447 247", "region": "logan", "trade": "equipment-hire", "website": ""}, {"id": "coolbreeze-rentals", "approved": true, "preferred": false, "contactName": "Stuart Dann", "email": "", "name": "Coolbreeze Rentals", "notes": "Drying equipment/AFD. Warehouse in Meadowbrook.", "phone": "1300 885 188", "region": "logan", "trade": "equipment-hire", "website": ""}, {"id": "dark-electrical-dlf3", "approved": true, "preferred": false, "contactName": "Daniel", "email": "", "name": "Dark Electrical", "notes": "Approved contractor", "phone": "0468 497 449", "region": "gold-coast", "trade": "electrician", "website": ""}, {"id": "dewar-group", "approved": false, "preferred": false, "contactName": "Dean", "email": "", "name": "Dewar Group", "notes": "Also does restoration work.", "phone": "0431 751 445", "region": "toowoomba", "trade": "asbestos-removal", "website": ""}, {"id": "euro-motive", "approved": false, "preferred": false, "contactName": "Matt", "email": "", "name": "Euro Motive", "notes": "Specialist Euro mechanic for Renault. Mobile \u2014 will come to North Brisbane; travels further at extra cost.", "phone": "0473 733 442", "region": "brisbane", "trade": "mechanic", "website": ""}, {"id": "express-carpet-repairs", "approved": true, "preferred": false, "contactName": "Elijah Chique", "email": "", "name": "Express Carpet Repairs", "notes": "Will travel for extra rates.", "phone": "0490 807 894", "region": "brisbane", "trade": "carpet-cleaner", "website": ""}, {"id": "exterior-solutions", "approved": true, "preferred": false, "contactName": "Richard", "email": "", "name": "Exterior Solutions", "notes": "Good to deal with, reliable.", "phone": "0408 700 994", "region": "toowoomba", "trade": "landscaping", "website": ""}, {"id": "jentech-electrical", "approved": true, "preferred": true, "contactName": "Office", "email": "", "name": "Jentech Electrical", "notes": "Preferred trade\nCovers Gold coast and sunshine coast too", "phone": "(07) 3914 9696", "region": "brisbane", "trade": "electrician", "website": ""}, {"id": "jmb-environmental", "approved": true, "preferred": true, "contactName": "Office", "email": "", "name": "JMB Environmental", "notes": "#1 Choice. Also services the Gold Coast.", "phone": "(02) 8339 0312", "region": "brisbane", "trade": "hygienist", "website": ""}, {"id": "jr-gas-plumbing-7q16", "approved": true, "preferred": false, "contactName": "Jarred", "email": "info@jrgasandwater.com.au", "name": "JR Gas & Plumbing", "notes": "", "phone": "1800 161 280", "region": "brisbane", "trade": "plumber", "website": "www.jrgasandwater.com.au"}, {"id": "kennards-self-storage", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "Kennards Self Storage", "notes": "Generally more expensive than other units. Good to deal with.", "phone": "", "region": "brisbane", "trade": "self-storage", "website": "https://www.kss.com.au/"}, {"id": "klaus-refrigeration", "approved": false, "preferred": false, "contactName": "Klaus", "email": "darlingdownsrefrigeration@gmail.com", "name": "Klaus", "notes": "Fridge and appliance repairs. Slow to provide reports.", "phone": "(07) 4633 4019", "region": "toowoomba", "trade": "appliance-repair", "website": ""}, {"id": "limov-electrical", "approved": false, "preferred": false, "contactName": "Jake Limov", "email": "jake@limovelectrical.com", "name": "Limov Electrical Contracting Pty Ltd", "notes": "North Brisbane (Scarborough).", "phone": "0406 156 912", "region": "brisbane", "trade": "electrician", "website": ""}, {"id": "mammoth-storage", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "Mammoth Storage", "notes": "Used for jobs further north of Brisbane, Sunshine Coast and beyond.", "phone": "(07) 5445 8848", "region": "sunshine-coast", "trade": "self-storage", "website": "https://mammothselfstore.com.au/locations/storage-forest-glen/"}, {"id": "occ-safety", "approved": false, "preferred": false, "contactName": "Malcom", "email": "", "name": "OCC Safety", "notes": "Will travel for extra rates. Bit bodgy.", "phone": "0412 997 314", "region": "brisbane", "trade": "hygienist", "website": ""}, {"id": "pressed-dry-cleaning", "approved": true, "preferred": true, "contactName": "Leigh", "email": "", "name": "Pressed Dry Cleaning", "notes": "Cleans clothes, curtains, linen etc. Can handle larger amounts, and does assessments onsite to work out whether it's worth cleaning vs replacing. Based in Wynnum.", "phone": "0409 395 721", "region": "brisbane", "trade": "dry-cleaning", "website": ""}, {"id": "rsm-conserve", "approved": false, "preferred": false, "contactName": "Liam", "email": "", "name": "RSM Conserve (Art Restorer)", "notes": "Free inspection onsite. Based in Bowen Hills.", "phone": "(07) 3257 7884", "region": "brisbane", "trade": "art-restoration", "website": "https://rsmconserve.com.au/"}, {"id": "storage-choice", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "Storage Choice", "notes": "Have only used the Zillmere branch. Reasonable pricing, good to deal with. Multiple locations available.", "phone": "(07) 3265 6666", "region": "brisbane", "trade": "self-storage", "website": "https://storagechoice.com.au/"}, {"id": "stuart-bywater-design-ikkb", "approved": true, "preferred": false, "contactName": "Stuart", "email": "", "name": "Stuart Bywater Design", "notes": "", "phone": "", "region": "brisbane", "trade": "furniture-restorer", "website": ""}, {"id": "taxi-box", "approved": false, "preferred": false, "contactName": "N/A", "email": "", "name": "Taxi Box", "notes": "", "phone": "(07) 3056 1841", "region": "brisbane", "trade": "storage-pod", "website": "https://www.taxibox.com.au/"}, {"id": "the-art-of-hanging", "approved": false, "preferred": false, "contactName": "", "email": "", "name": "The Art of Hanging", "notes": "", "phone": "(07) 3266 1479", "region": "brisbane", "trade": "art-storage", "website": "http://artofhanging.com/"}, {"id": "the-carpet-cleaners-brisbane", "approved": true, "preferred": true, "contactName": "Dan Swain", "email": "", "name": "The Carpet Cleaners Brisbane", "notes": "Will travel for extra rates.", "phone": "0466 407 727", "region": "brisbane", "trade": "carpet-cleaner", "website": ""}, {"id": "the-carpet-surgeon", "approved": true, "preferred": false, "contactName": "Ben", "email": "", "name": "The Carpet Surgeon", "notes": "", "phone": "0421 222 611", "region": "gold-coast", "trade": "carpet-cleaner", "website": ""}];
 
   var state = { activeTrade: null, activeRegion: null, approvedOnly: false, preferredOnly: false, query: "" };
 
@@ -318,8 +331,51 @@ a{color:var(--accent-strong);}
     var digits = (phone||"").replace(/[^\d+]/g,"");
     return digits ? "tel:"+digits : "";
   }
+  function toast(msg){
+    var host = $("toastHost");
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    host.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3600);
+  }
   function tradeLabel(key){ var t = TRADES.find(function(x){return x.key===key;}); return t ? t.label : key; }
   function regionLabel(key){ var r = REGIONS.find(function(x){return x.key===key;}); return r ? r.label : key; }
+  function regionsOf(s){
+    if(s && s.regions && s.regions.length) return s.regions;
+    if(s && s.region) return [s.region];
+    return [];
+  }
+  function copyText(text){
+    function legacyCopy(){
+      try{
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }catch(e){ return false; }
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        toast("Copied: " + text);
+      }).catch(function(){
+        toast(legacyCopy() ? ("Copied: " + text) : ("Couldn't copy — " + text));
+      });
+    } else {
+      toast(legacyCopy() ? ("Copied: " + text) : ("Couldn't copy — " + text));
+    }
+  }
+  function copyContact(s){
+    copyText(s.name + (s.phone ? " — " + s.phone : ""));
+  }
+  window.__mirCopy = function(id){
+    var s = SUBS.find(function(x){return x.id===id;});
+    if(s) copyContact(s);
+  };
 
   function chipEl(label, count, active, onClick){
     var c = document.createElement("button");
@@ -346,7 +402,7 @@ a{color:var(--accent-strong);}
 
     var regionHost = $("regionChips");
     var rcounts = {};
-    SUBS.forEach(function(s){ rcounts[s.region] = (rcounts[s.region]||0)+1; });
+    SUBS.forEach(function(s){ regionsOf(s).forEach(function(rk){ rcounts[rk] = (rcounts[rk]||0)+1; }); });
     var regionsSorted = REGIONS.slice().sort(function(a,b){ return a.label.localeCompare(b.label); });
     regionHost.innerHTML = "";
     regionHost.appendChild(chipEl("All regions", SUBS.length, state.activeRegion===null, function(){ state.activeRegion = null; renderAll(); }));
@@ -362,11 +418,11 @@ a{color:var(--accent-strong);}
     var q = state.query.trim().toLowerCase();
     return SUBS.filter(function(s){
       if(state.activeTrade && s.trade !== state.activeTrade) return false;
-      if(state.activeRegion && s.region !== state.activeRegion) return false;
+      if(state.activeRegion && regionsOf(s).indexOf(state.activeRegion) === -1) return false;
       if(state.approvedOnly && !s.approved) return false;
       if(state.preferredOnly && !s.preferred) return false;
       if(q){
-        var hay = [s.name, s.contactName, s.notes, tradeLabel(s.trade), regionLabel(s.region), s.phone, s.email].join(" ").toLowerCase();
+        var hay = [s.name, s.contactName, s.notes, tradeLabel(s.trade), regionsOf(s).map(regionLabel).join(" "), s.phone, s.email].join(" ").toLowerCase();
         if(hay.indexOf(q) === -1) return false;
       }
       return true;
@@ -400,11 +456,12 @@ a{color:var(--accent-strong);}
           (s.preferred ? '<span class="badge preferred">★ Preferred</span>' : '')+
           (s.approved ? '<span class="badge approved">✓ Approved</span>' : '')+
           '<span class="badge">'+esc(tradeLabel(s.trade))+'</span>'+
-          '<span class="badge region">'+esc(regionLabel(s.region))+'</span>'+
+          regionsOf(s).map(function(rk){ return '<span class="badge region">'+esc(regionLabel(rk))+'</span>'; }).join("")+
         '</div>'+
         '<div class="card-notes">'+esc(s.notes||"")+'</div>'+
         '<div class="card-foot">'+
           (s.phone ? '<a class="card-phone" href="'+telHref(s.phone)+'" onclick="event.stopPropagation()">'+esc(s.phone)+'</a>' : '<span></span>')+
+          (s.phone || s.name ? '<button type="button" class="icon-copy-btn" title="Copy name &amp; phone" onclick="event.stopPropagation(); window.__mirCopy(\''+esc(s.id)+'\')">📋</button>' : '')+
         '</div>';
       card.addEventListener("click", function(){ openDetail(s.id); });
       grid.appendChild(card);
@@ -414,16 +471,21 @@ a{color:var(--accent-strong);}
   function renderStats(){
     $("statTotal").textContent = SUBS.length;
     $("statTrades").textContent = new Set(SUBS.map(function(s){return s.trade;})).size;
-    $("statRegions").textContent = new Set(SUBS.map(function(s){return s.region;})).size;
+    var allRegions = [];
+    SUBS.forEach(function(s){ regionsOf(s).forEach(function(rk){ allRegions.push(rk); }); });
+    $("statRegions").textContent = new Set(allRegions).size;
   }
 
   function renderAll(){ renderChips(); renderGrid(); renderStats(); }
 
+  var currentDetail = null;
   function openDetail(id){
     var s = SUBS.find(function(x){return x.id===id;});
     if(!s) return;
+    currentDetail = s;
     $("detailName").textContent = s.name;
-    $("detailBadges").innerHTML = (s.preferred ? '<span class="badge preferred">★ Preferred</span>' : '')+(s.approved ? '<span class="badge approved">✓ Approved</span>' : '')+'<span class="badge">'+esc(tradeLabel(s.trade))+'</span><span class="badge region">'+esc(regionLabel(s.region))+'</span>';
+    $("detailBadges").innerHTML = (s.preferred ? '<span class="badge preferred">★ Preferred</span>' : '')+(s.approved ? '<span class="badge approved">✓ Approved</span>' : '')+'<span class="badge">'+esc(tradeLabel(s.trade))+'</span>'+
+      regionsOf(s).map(function(rk){ return '<span class="badge region">'+esc(regionLabel(rk))+'</span>'; }).join("");
     var rows = [];
     if(s.contactName) rows.push(["Contact", esc(s.contactName)]);
     if(s.phone) rows.push(["Phone", '<a class="mono" href="'+telHref(s.phone)+'">'+esc(s.phone)+'</a>']);
@@ -443,6 +505,7 @@ a{color:var(--accent-strong);}
   });
   document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ closeDetail(); } });
 
+  $("detailCopyBtn").addEventListener("click", function(){ if(currentDetail) copyContact(currentDetail); });
   $("searchInput").addEventListener("input", function(e){ state.query = e.target.value; renderGrid(); });
   $("clearFilters").addEventListener("click", function(){
     state.activeTrade = null; state.activeRegion = null; state.approvedOnly = false; state.preferredOnly = false; state.query = ""; $("searchInput").value="";
